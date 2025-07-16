@@ -1,4 +1,6 @@
+
 from datetime import datetime
+import bcrypt
 
 class BankAccount:
     _next_account_number = 1001
@@ -6,9 +8,15 @@ class BankAccount:
     def __init__(self, name: str, pin: str, balance: float = 0.0):
         self.account_number = BankAccount._generate_account_number()
         self.name = name
-        self._pin = pin
+        self._pin_hash = self._hash_pin(pin)
         self.balance = balance
         self.transactions = []
+    @staticmethod
+    def _hash_pin(pin: str) -> bytes:
+        return bcrypt.hashpw(pin.encode(), bcrypt.gensalt())
+
+    def verify_pin(self, pin: str) -> bool:
+        return bcrypt.checkpw(pin.encode(), self._pin_hash)
         
     @classmethod
     def _generate_account_number(cls):
@@ -33,7 +41,7 @@ class BankAccount:
         return self.balance
     
     def grt_balance(self, pin: str):
-        if pin != self._pin:
+        if not self.verify_pin(pin):
             raise PermissionError("Invalid PIN.")
         return self.balance
     
